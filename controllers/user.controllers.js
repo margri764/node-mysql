@@ -159,10 +159,105 @@ if (email !== '' && email !== null)  {
   }
 };
 
+const getUserById = async (req, res) => {
+
+  try {
+    const id = req.params.id;
+
+    // Consulta para obtener el empleado por ID
+    const [employee] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+
+    if (employee.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      employee: employee[0],
+    });
+  } catch (error) {
+    console.log('getUserById Error:', error);
+    let errorMessage = 'Something went wrong, please contact the administrator';
+
+    res.status(500).json({
+      error: errorMessage,
+    });
+  }
+};
+
+const deleteUserById = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    // Consulta para obtener el usuario por ID
+    const [user] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+
+    if (user.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Consulta para actualizar el estado del usuario a inactivo (status: false)
+    const [updatedUser] = await pool.query('UPDATE users SET status = false WHERE id = ?', [id]);
+
+    // Consulta para obtener el usuario actualizado
+    const [result] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
+    const deletedUser = result.length > 0 ? result[0] : null;
+
+    return res.status(200).json({
+      success: true,
+      user: deletedUser,
+    });
+  } catch (error) {
+    console.log('deleteUserById Error:', error);
+    let errorMessage = 'Something went wrong, please contact the administrator';
+
+    res.status(500).json({
+      error: errorMessage,
+    });
+  }
+};
+
+const searchUser = async (req, res) => {
+  try {
+    const q = req.query.querySearch;
+
+    const regex = new RegExp(q.split(/\s+/).join('.*'), 'i');
+
+    // Consulta para buscar usuarios por nombre de usuario o correo electrónico
+    const [users] = await pool.query(
+      'SELECT * FROM users WHERE userName LIKE ? OR email LIKE ?',
+      [`%${q}%`, `%${q}%`]
+    );
+
+    res.status(200).json({
+      success: true,
+      users,
+    });
+  } catch (error) {
+    console.log('searchUser Error:', error);
+    let errorMessage = 'Something went wrong, please contact the administrator';
+
+    res.status(500).json({
+      error: errorMessage,
+    });
+  }
+};
+
+
+
 
 
   export {
           createUser,
           getAllUsers,
-          editUserById
+          editUserById,
+          getUserById,
+          deleteUserById,
+          searchUser
          }
